@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -45,15 +44,14 @@ type TechnicianDay struct {
 // Completed and Cancelled are the subsets in those states. A technician with
 // visits that day is listed even if since deactivated or deleted (§5.2).
 func (s *ReportService) Daily(ctx context.Context, day string) (*DailyReport, error) {
-	local, err := time.ParseInLocation("2006-01-02", day, time.Local)
+	start, end, err := UKDayRange(day)
 	if err != nil {
 		return nil, invalidf("date must be YYYY-MM-DD")
 	}
-	start, end := local, local.Add(24*time.Hour)
 	var visits []models.Visit
 	err = s.db.WithContext(ctx).
 		Where("scheduled_start >= ? AND scheduled_start < ?", start, end).
-		Preload("Technician").
+		Preload("Technician", UnscopedUserAssoc).
 		Preload("ClockEvents", func(db *gorm.DB) *gorm.DB { return db.Order("occurred_at, id") }).
 		Order("scheduled_start, id").
 		Find(&visits).Error
