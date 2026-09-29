@@ -42,7 +42,7 @@ src/
 │   ├── auth.tsx           AuthProvider / useAuth / useCurrentUser
 │   ├── permissions.ts     who may clock, cancel, see reports; visit state machine gates
 │   └── names.ts           "First Last", "Unassigned", "Unknown user"
-├── components/            Header, Layout, RequireAuth, StatusBadge, Pager, ErrorMessage
+├── components/            Header, Layout, RequireAuth, StatusBadge, PriorityLabel, Pager, ErrorMessage
 ├── pages/                 LoginPage, VisitsPage, VisitDetailPage, DailyReportPage (+ tests)
 └── test/                  setup, fixtures, renderApp
 ```

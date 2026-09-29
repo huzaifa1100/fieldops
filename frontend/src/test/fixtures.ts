@@ -34,6 +34,7 @@ export function makeVisit(overrides: Partial<Visit> = {}): Visit {
     scheduled_start: '2026-09-21T08:00:00Z',
     scheduled_end: '2026-09-21T10:00:00Z',
     status: 'scheduled',
+    priority: 'normal',
     cancelled_by_id: null,
     cancelled_at: null,
     clock_events: [],

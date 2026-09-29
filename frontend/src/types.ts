@@ -19,6 +19,8 @@ export interface Site {
 
 export type VisitStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
+export type VisitPriority = 'low' | 'normal' | 'high';
+
 export type ClockKind = 'in' | 'out';
 
 export interface PersonRef {
@@ -44,6 +46,7 @@ export interface Visit {
   scheduled_start: string;
   scheduled_end: string;
   status: VisitStatus;
+  priority: VisitPriority;
   cancelled_by_id: number | null;
   cancelled_at: string | null;
   clock_events: ClockEvent[];

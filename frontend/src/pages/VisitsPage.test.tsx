@@ -99,6 +99,22 @@ describe('VisitsPage', () => {
     expect(screen.getByText('In progress')).toBeInTheDocument();
   });
 
+  // rule: §3.7 — each visit's priority is shown in the list
+  it('shows each visit\'s priority in the list', async () => {
+    vi.spyOn(apiClient, 'getVisits').mockResolvedValue(
+      makeVisitList({
+        visits: [makeVisit({ id: 7, priority: 'high' }), makeVisit({ id: 8, priority: 'low' })],
+        total: 2,
+      }),
+    );
+    renderApp('/visits', dispatcher);
+
+    await screen.findAllByText('Riverside Depot');
+    expect(screen.getByRole('columnheader', { name: 'Priority' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'High' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Low' })).toBeInTheDocument();
+  });
+
   it('hides the technician filter and the report link from technicians', async () => {
     vi.spyOn(apiClient, 'getVisits').mockResolvedValue(makeVisitList());
     renderApp('/visits', makeUser({ role: 'technician' }));

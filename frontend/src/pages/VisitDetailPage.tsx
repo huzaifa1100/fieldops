@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ErrorMessage } from '../components/ErrorMessage';
+import { PriorityLabel } from '../components/PriorityLabel';
 import { StatusBadge } from '../components/StatusBadge';
 import { apiClient, describeError } from '../lib/api';
 import { useCurrentUser } from '../lib/auth';
@@ -91,6 +92,10 @@ export function VisitDetailPage() {
         <dt>Status</dt>
         <dd>
           <StatusBadge status={visit.status} />
+        </dd>
+        <dt>Priority</dt>
+        <dd>
+          <PriorityLabel priority={visit.priority} />
         </dd>
         {visit.cancelled_at && (
           <>

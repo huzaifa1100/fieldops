@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { Pager } from '../components/Pager';
+import { PriorityLabel } from '../components/PriorityLabel';
 import { StatusBadge } from '../components/StatusBadge';
 import { apiClient, describeError } from '../lib/api';
 import { useCurrentUser } from '../lib/auth';
@@ -138,6 +139,7 @@ export function VisitsPage() {
                 <th>Technician</th>
                 <th>Scheduled</th>
                 <th>Status</th>
+                <th>Priority</th>
               </tr>
             </thead>
             <tbody>
@@ -150,6 +152,9 @@ export function VisitsPage() {
                   <td data-label="Scheduled">{formatRangeUK(visit.scheduled_start, visit.scheduled_end)}</td>
                   <td data-label="Status">
                     <StatusBadge status={visit.status} />
+                  </td>
+                  <td data-label="Priority">
+                    <PriorityLabel priority={visit.priority} />
                   </td>
                 </tr>
               ))}

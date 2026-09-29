@@ -87,6 +87,15 @@ describe('VisitDetailPage', () => {
     expect(screen.getByRole('cell', { name: 'Tess Turner' })).toBeInTheDocument();
   });
 
+  // rule: §3.7 — the visit's priority is shown on the detail page
+  it('shows the visit\'s priority', async () => {
+    vi.spyOn(apiClient, 'getVisit').mockResolvedValue(makeVisit({ priority: 'high' }));
+    renderApp('/visits/7', dispatcher);
+
+    expect(await screen.findByText('High')).toBeInTheDocument();
+    expect(screen.getByText('Priority')).toBeInTheDocument();
+  });
+
   it('cancels after confirmation and shows the cancelled state', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const getVisit = vi
