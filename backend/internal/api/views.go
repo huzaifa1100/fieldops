@@ -56,6 +56,7 @@ type visitView struct {
 	ScheduledStart string           `json:"scheduled_start"`
 	ScheduledEnd   string           `json:"scheduled_end"`
 	Status         string           `json:"status"`
+	Priority       string           `json:"priority"`
 	CancelledByID  *uint            `json:"cancelled_by_id"`
 	CancelledAt    *string          `json:"cancelled_at"`
 	ClockEvents    []clockEventView `json:"clock_events"`
@@ -162,6 +163,7 @@ func newVisitView(v *models.Visit) visitView {
 		ScheduledStart: instant(v.ScheduledStart),
 		ScheduledEnd:   instant(v.ScheduledEnd),
 		Status:         v.Status,
+		Priority:       v.Priority,
 		CancelledByID:  v.CancelledByID,
 		CancelledAt:    optionalInstant(v.CancelledAt),
 		ClockEvents:    events,

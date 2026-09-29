@@ -18,6 +18,7 @@ type visitRequest struct {
 	TechnicianID   *uint  `json:"technician_id"`
 	ScheduledStart string `json:"scheduled_start"`
 	ScheduledEnd   string `json:"scheduled_end"`
+	Priority       string `json:"priority"`
 }
 
 func (r visitRequest) input() (services.VisitInput, error) {
@@ -29,7 +30,7 @@ func (r visitRequest) input() (services.VisitInput, error) {
 	if err != nil {
 		return services.VisitInput{}, err
 	}
-	return services.VisitInput{SiteID: r.SiteID, TechnicianID: r.TechnicianID, ScheduledStart: start, ScheduledEnd: end}, nil
+	return services.VisitInput{SiteID: r.SiteID, TechnicianID: r.TechnicianID, ScheduledStart: start, ScheduledEnd: end, Priority: r.Priority}, nil
 }
 
 // parseInstant accepts RFC3339 only. A bare date or a wall-clock time without
@@ -45,7 +46,7 @@ func parseInstant(raw string) (time.Time, error) {
 // ListVisits pages through visits in an inclusive run of Europe/London days
 // (§3.2). Technicians are limited to their own visits by the service.
 func (h *Handlers) ListVisits(c *gin.Context) {
-	filter := services.VisitFilter{From: c.Query("from"), To: c.Query("to"), Status: c.Query("status")}
+	filter := services.VisitFilter{From: c.Query("from"), To: c.Query("to"), Status: c.Query("status"), Priority: c.Query("priority")}
 	if raw := c.Query("technician_id"); raw != "" {
 		id, err := strconv.ParseUint(raw, 10, 64)
 		if err != nil {

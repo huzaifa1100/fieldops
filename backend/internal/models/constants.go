@@ -26,6 +26,16 @@ var AllVisitStatuses = []string{
 	VisitStatusCancelled,
 }
 
+// Visit priorities (§3.7).
+const (
+	VisitPriorityLow    = "low"
+	VisitPriorityNormal = "normal"
+	VisitPriorityHigh   = "high"
+)
+
+// AllVisitPriorities lists every priority a visit may hold, lowest first.
+var AllVisitPriorities = []string{VisitPriorityLow, VisitPriorityNormal, VisitPriorityHigh}
+
 // Clock event kinds (§4).
 const (
 	ClockKindIn  = "in"
@@ -58,6 +68,11 @@ func IsValidRole(role string) bool {
 // IsValidVisitStatus reports whether status is one of the defined visit statuses.
 func IsValidVisitStatus(status string) bool {
 	return contains(AllVisitStatuses, status)
+}
+
+// IsValidVisitPriority reports whether priority is one of the defined visit priorities.
+func IsValidVisitPriority(priority string) bool {
+	return contains(AllVisitPriorities, priority)
 }
 
 func contains(list []string, value string) bool {

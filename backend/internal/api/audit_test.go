@@ -142,3 +142,26 @@ func TestAudit_RegistryCoversEveryMutatingRoute(t *testing.T) {
 		}
 	}
 }
+
+// rule: §6.1 — a priority change is audited with its before and after values
+func TestAudit_VisitPriorityChange(t *testing.T) {
+	s := newTestServer(t)
+	dispatcher := s.createUser("dev.dispatcher@example.com", models.RoleDispatcher, "")
+	site := s.createSite("Depot")
+	visit := s.createVisit(site.ID, nil, "2026-07-14T08:00:00Z", 60)
+
+	s.decode(s.do(http.MethodPut, "/api/visits/"+itoa(visit.ID), s.login(dispatcher.Email), map[string]any{
+		"site_id": site.ID, "scheduled_start": "2026-07-14T08:00:00Z", "scheduled_end": "2026-07-14T09:00:00Z", "priority": models.VisitPriorityHigh,
+	}), http.StatusOK, nil)
+	rows := s.auditRows(models.ResourceVisit, visit.ID)
+	if len(rows) != 1 || rows[0].Action != models.AuditActionUpdate {
+		t.Fatalf("rows = %+v", rows)
+	}
+	changes := changesOf(t, rows[0])
+	if c := changes["priority"]; c.Before != models.VisitPriorityNormal || c.After != models.VisitPriorityHigh {
+		t.Errorf("priority change = %+v, want normal to high", c)
+	}
+	if _, present := changes["scheduled_start"]; present {
+		t.Error("an unchanged field was reported")
+	}
+}

@@ -177,6 +177,7 @@ func (s *AuditService) SnapshotVisit(ctx context.Context, id uint) (Snapshot, er
 		ScheduledStart string  `json:"scheduled_start"`
 		ScheduledEnd   string  `json:"scheduled_end"`
 		Status         string  `json:"status"`
+		Priority       string  `json:"priority"`
 		CancelledByID  *uint   `json:"cancelled_by_id"`
 		CancelledAt    *string `json:"cancelled_at"`
 		ClockInAt      *string `json:"clock_in_at"`
@@ -188,6 +189,7 @@ func (s *AuditService) SnapshotVisit(ctx context.Context, id uint) (Snapshot, er
 		ScheduledStart: formatInstant(visit.ScheduledStart),
 		ScheduledEnd:   formatInstant(visit.ScheduledEnd),
 		Status:         visit.Status,
+		Priority:       visit.Priority,
 		CancelledByID:  visit.CancelledByID,
 		CancelledAt:    formatOptionalInstant(visit.CancelledAt),
 		ClockInAt:      clockIn,

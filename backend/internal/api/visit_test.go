@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -252,4 +253,91 @@ func TestVisits_CreateAndUpdateValidation(t *testing.T) {
 		t.Errorf("updated = %+v", updated)
 	}
 	s.expectError(s.do(http.MethodPut, "/api/visits/999", token, body(nil)), http.StatusNotFound)
+}
+
+// rule: §3.7 — priority is low, normal or high; a create or edit that leaves it out gets normal, and any other value is rejected
+func TestVisits_PriorityOnCreateAndEdit(t *testing.T) {
+	s := newTestServer(t)
+	dispatcher := s.createUser("dev.dispatcher@example.com", models.RoleDispatcher, "")
+	site := s.createSite("Depot")
+	token := s.login(dispatcher.Email)
+	body := func(over map[string]any) map[string]any {
+		b := map[string]any{"site_id": site.ID, "scheduled_start": "2026-07-14T08:00:00Z", "scheduled_end": "2026-07-14T09:00:00Z"}
+		for k, v := range over {
+			b[k] = v
+		}
+		return b
+	}
+
+	var plain, urgent visitView
+	s.decode(s.do(http.MethodPost, "/api/visits", token, body(nil)), http.StatusCreated, &plain)
+	if plain.Priority != models.VisitPriorityNormal {
+		t.Errorf("created without priority: priority = %q, want %q", plain.Priority, models.VisitPriorityNormal)
+	}
+	s.decode(s.do(http.MethodPost, "/api/visits", token, body(map[string]any{"priority": models.VisitPriorityHigh})), http.StatusCreated, &urgent)
+	if urgent.Priority != models.VisitPriorityHigh {
+		t.Errorf("created with high: priority = %q, want %q", urgent.Priority, models.VisitPriorityHigh)
+	}
+
+	path := "/api/visits/" + itoa(urgent.ID)
+	for _, bad := range []string{"urgent", "HIGH"} {
+		if msg := s.expectError(s.do(http.MethodPost, "/api/visits", token, body(map[string]any{"priority": bad})), http.StatusBadRequest); !strings.Contains(msg, "unknown priority") {
+			t.Errorf("create with priority %q: error = %q, want it to name the unknown priority", bad, msg)
+		}
+		s.expectError(s.do(http.MethodPut, path, token, body(map[string]any{"priority": bad})), http.StatusBadRequest)
+	}
+	var got visitView
+	s.decode(s.do(http.MethodGet, path, token, nil), http.StatusOK, &got)
+	if got.Priority != models.VisitPriorityHigh {
+		t.Errorf("after rejected edits: priority = %q, want %q unchanged", got.Priority, models.VisitPriorityHigh)
+	}
+
+	s.decode(s.do(http.MethodPut, path, token, body(map[string]any{"priority": models.VisitPriorityLow})), http.StatusOK, &got)
+	if got.Priority != models.VisitPriorityLow {
+		t.Errorf("edited to low: priority = %q, want %q", got.Priority, models.VisitPriorityLow)
+	}
+	for _, edit := range []map[string]any{body(nil), body(map[string]any{"priority": nil})} {
+		s.decode(s.do(http.MethodPut, path, token, body(map[string]any{"priority": models.VisitPriorityHigh})), http.StatusOK, nil)
+		s.decode(s.do(http.MethodPut, path, token, edit), http.StatusOK, &got)
+		if got.Priority != models.VisitPriorityNormal {
+			t.Errorf("edit %v: priority = %q, want %q because an edit replaces every field, as it does for technician_id", edit, got.Priority, models.VisitPriorityNormal)
+		}
+	}
+}
+
+// rule: §3.7 — ?priority= narrows the list server-side; an unknown value is rejected, not answered with an empty list
+func TestVisits_PriorityFilter(t *testing.T) {
+	s := newTestServer(t)
+	dispatcher := s.createUser("dev.dispatcher@example.com", models.RoleDispatcher, "")
+	site := s.createSite("Depot")
+	token := s.login(dispatcher.Email)
+	book := func(start, priority string) {
+		b := map[string]any{"site_id": site.ID, "scheduled_start": start, "scheduled_end": strings.Replace(start, ":00:00Z", ":30:00Z", 1)}
+		if priority != "" {
+			b["priority"] = priority
+		}
+		s.decode(s.do(http.MethodPost, "/api/visits", token, b), http.StatusCreated, nil)
+	}
+	book("2026-07-14T08:00:00Z", models.VisitPriorityHigh)
+	book("2026-07-14T09:00:00Z", models.VisitPriorityLow)
+	book("2026-07-14T10:00:00Z", "")
+	book("2026-07-15T08:00:00Z", models.VisitPriorityHigh)
+
+	for _, priority := range models.AllVisitPriorities {
+		var list visitList
+		s.decode(s.do(http.MethodGet, "/api/visits?from=2026-07-14&to=2026-07-14&priority="+priority, token, nil), http.StatusOK, &list)
+		if list.Total != 1 || len(list.Visits) != 1 || list.Visits[0].Priority != priority {
+			t.Errorf("?priority=%s on 2026-07-14: total %d, visits %+v, want the one %s visit on that day", priority, list.Total, list.Visits, priority)
+		}
+	}
+	var all visitList
+	s.decode(s.do(http.MethodGet, "/api/visits?from=2026-07-14&to=2026-07-14&priority=", token, nil), http.StatusOK, &all)
+	if all.Total != 3 {
+		t.Errorf("empty ?priority=: total %d, want 3 (no filter)", all.Total)
+	}
+	for _, bad := range []string{"urgent", "high,low"} {
+		if msg := s.expectError(s.do(http.MethodGet, "/api/visits?from=2026-07-14&to=2026-07-14&priority="+bad, token, nil), http.StatusBadRequest); !strings.Contains(msg, "unknown priority") {
+			t.Errorf("?priority=%s: error = %q, want it to name the unknown priority", bad, msg)
+		}
+	}
 }

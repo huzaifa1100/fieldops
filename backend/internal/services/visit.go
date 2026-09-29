@@ -34,15 +34,18 @@ type VisitFilter struct {
 	To           string
 	TechnicianID *uint
 	Status       string
+	Priority     string
 }
 
 // VisitInput is the writable shape of a visit. Status is never set directly:
-// it moves through cancel and clock actions only.
+// it moves through cancel and clock actions only. An empty Priority means
+// normal, on edits too, because an edit replaces every field (§3.7).
 type VisitInput struct {
 	SiteID         uint
 	TechnicianID   *uint
 	ScheduledStart time.Time
 	ScheduledEnd   time.Time
+	Priority       string
 }
 
 func (in *VisitInput) validate() error {
@@ -53,6 +56,11 @@ func (in *VisitInput) validate() error {
 		return invalidf("scheduled_start and scheduled_end are required")
 	case !in.ScheduledEnd.After(in.ScheduledStart):
 		return invalidf("scheduled_end must be after scheduled_start")
+	case in.Priority != "" && !models.IsValidVisitPriority(in.Priority):
+		return invalidf("unknown priority %q", in.Priority)
+	}
+	if in.Priority == "" {
+		in.Priority = models.VisitPriorityNormal
 	}
 	in.ScheduledStart = in.ScheduledStart.UTC()
 	in.ScheduledEnd = in.ScheduledEnd.UTC()
@@ -84,6 +92,9 @@ func (s *VisitService) List(ctx context.Context, actor Actor, filter VisitFilter
 	if filter.Status != "" && !models.IsValidVisitStatus(filter.Status) {
 		return PageResult[models.Visit]{}, invalidf("unknown status %q", filter.Status)
 	}
+	if filter.Priority != "" && !models.IsValidVisitPriority(filter.Priority) {
+		return PageResult[models.Visit]{}, invalidf("unknown priority %q", filter.Priority)
+	}
 	if actor.IsTechnician() {
 		id := actor.ID
 		filter.TechnicianID = &id
@@ -96,6 +107,9 @@ func (s *VisitService) List(ctx context.Context, actor Actor, filter VisitFilter
 	}
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)
+	}
+	if filter.Priority != "" {
+		query = query.Where("priority = ?", filter.Priority)
 	}
 
 	var total int64
@@ -137,6 +151,7 @@ func (s *VisitService) Create(ctx context.Context, in VisitInput) (*models.Visit
 		ScheduledStart: in.ScheduledStart,
 		ScheduledEnd:   in.ScheduledEnd,
 		Status:         models.VisitStatusScheduled,
+		Priority:       in.Priority,
 	}
 	if err := s.db.WithContext(ctx).Create(&visit).Error; err != nil {
 		return nil, fmt.Errorf("create visit: %w", err)
@@ -168,6 +183,7 @@ func (s *VisitService) Update(ctx context.Context, id uint, in VisitInput) (*mod
 	visit.TechnicianID = in.TechnicianID
 	visit.ScheduledStart = in.ScheduledStart
 	visit.ScheduledEnd = in.ScheduledEnd
+	visit.Priority = in.Priority
 	if err := s.db.WithContext(ctx).Save(&visit).Error; err != nil {
 		return nil, fmt.Errorf("update visit: %w", err)
 	}

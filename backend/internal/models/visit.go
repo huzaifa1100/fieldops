@@ -13,6 +13,7 @@ type Visit struct {
 	ScheduledStart time.Time `gorm:"not null;index"`
 	ScheduledEnd   time.Time `gorm:"not null"`
 	Status         string    `gorm:"size:32;not null;index"`
+	Priority       string    `gorm:"size:16;not null;default:normal"`
 	CancelledByID  *uint
 	CancelledBy    *User `gorm:"foreignKey:CancelledByID"`
 	CancelledAt    *time.Time
