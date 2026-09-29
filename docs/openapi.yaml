@@ -280,6 +280,7 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, format: date }, example: '2026-07-14' }
         - { name: technician_id, in: query, schema: { type: integer } }
         - { name: status, in: query, schema: { $ref: '#/components/schemas/VisitStatus' } }
+        - { name: priority, in: query, schema: { $ref: '#/components/schemas/VisitPriority' }, description: "One value; an unknown value is 400 (§3.7)" }
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -527,6 +528,9 @@ components:
     VisitStatus:
       type: string
       enum: [scheduled, in_progress, completed, cancelled]
+    VisitPriority:
+      type: string
+      enum: [low, normal, high]
     ClockKind:
       type: string
       enum: [in, out]
@@ -613,7 +617,7 @@ components:
 
     Visit:
       type: object
-      required: [id, site_id, site, technician_id, technician, scheduled_start, scheduled_end, status, cancelled_by_id, cancelled_at, clock_events]
+      required: [id, site_id, site, technician_id, technician, scheduled_start, scheduled_end, status, priority, cancelled_by_id, cancelled_at, clock_events]
       properties:
         id: { type: integer }
         site_id: { type: integer }
@@ -628,6 +632,7 @@ components:
         scheduled_start: { type: string, format: date-time, description: RFC3339 UTC }
         scheduled_end: { type: string, format: date-time, description: RFC3339 UTC }
         status: { $ref: '#/components/schemas/VisitStatus' }
+        priority: { $ref: '#/components/schemas/VisitPriority' }
         cancelled_by_id: { type: integer, nullable: true }
         cancelled_at: { type: string, format: date-time, nullable: true }
         clock_events:
@@ -641,6 +646,12 @@ components:
         technician_id: { type: integer, nullable: true, description: "An active user with the technician role, or null" }
         scheduled_start: { type: string, format: date-time, description: RFC3339 with offset }
         scheduled_end: { type: string, format: date-time, description: RFC3339 with offset; must be after scheduled_start }
+        priority:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/VisitPriority'
+          nullable: true
+          description: normal when omitted or null, on update too (§3.7)
     VisitResponse:
       allOf:
         - $ref: '#/components/schemas/Success'

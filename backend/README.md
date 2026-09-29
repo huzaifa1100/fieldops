@@ -46,7 +46,7 @@ no PostgreSQL is needed. Handler tests go through the real router in
 
 ```
 main.go, config.go        boot: .env + env → config, DB, migrate, seed, serve
-internal/models           GORM structs + constants.go (roles, statuses, audit names)
+internal/models           GORM structs + constants.go (roles, statuses, priorities, audit names)
 internal/services         all business logic and queries
   ukday.go                Europe/London day helpers (the only place a "day" is decided)
   crypto.go               AES-GCM for users.licence_number

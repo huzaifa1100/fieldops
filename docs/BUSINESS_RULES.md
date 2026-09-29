@@ -15,11 +15,12 @@ The source of truth for what fieldops does. Tests that verify a rule cite it wit
 ## §3 Visits
 
 - **§3.1** A visit has a site, an optional technician, a scheduled start and end (instants), and a status: `scheduled`, `in_progress`, `completed`, `cancelled`.
-- **§3.2** `GET /api/visits` requires `from` and `to` (YYYY-MM-DD, Europe/London days, inclusive) and filters server-side; `technician_id` and `status` are optional filters. Pages are capped at 100 and the effective `page_size` is echoed.
+- **§3.2** `GET /api/visits` requires `from` and `to` (YYYY-MM-DD, Europe/London days, inclusive) and filters server-side; `technician_id`, `status` and `priority` are optional filters. Pages are capped at 100 and the effective `page_size` is echoed.
 - **§3.3** A visit whose scheduled start is on Europe/London day D belongs to day D in every report and list, whatever the server's or the browser's timezone.
 - **§3.4** Cancelling a visit keeps the row (status `cancelled`) and records who cancelled it and when. Only a `scheduled` or `in_progress` visit can be cancelled; cancelling a `completed` or `cancelled` one is rejected (409).
 - **§3.5** A `completed` or `cancelled` visit is closed: `PUT /api/visits/:id` on it is rejected (409). Status never changes through `PUT`; only cancel and clock actions move it.
 - **§3.6** A visit's site must be a live (not soft-deleted) site and its technician, when set, must be an active user with the `technician` role; otherwise the request is rejected (400). `scheduled_end` must be after `scheduled_start`, and both are RFC3339 instants with an offset.
+- **§3.7** A visit has a priority: `low`, `normal` or `high`. It is set on create and on `PUT /api/visits/:id`. When the request leaves it out or sends null, it is `normal`, on an edit too, because `PUT` replaces every writable field (the same way an omitted `technician_id` unassigns the visit). Any other value is rejected (400). `GET /api/visits?priority=` takes one value; an unknown value is rejected (400), not answered with an empty list.
 
 ## §4 Clock events
 
